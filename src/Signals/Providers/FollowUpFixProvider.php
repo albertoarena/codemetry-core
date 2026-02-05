@@ -14,8 +14,8 @@ use Codemetry\Core\Signals\SignalProvider;
 
 final class FollowUpFixProvider implements SignalProvider
 {
-    private const string FIX_PATTERN = '/\b(fix|bug|hotfix|patch|typo|oops)\b/i';
-    private const int DEFAULT_HORIZON_DAYS = 3;
+    private const FIX_PATTERN = '/\b(fix|bug|hotfix|patch|typo|oops)\b/i';
+    private const DEFAULT_HORIZON_DAYS = 3;
 
     public function id(): string
     {

@@ -12,7 +12,7 @@ use Codemetry\Core\Domain\ReasonItem;
 
 final class HeuristicScorer
 {
-    private const int BASE_SCORE = 70;
+    private const BASE_SCORE = 70;
 
     /**
      * @param array<string> $confounders Pre-existing confounders (e.g. from provider registry)

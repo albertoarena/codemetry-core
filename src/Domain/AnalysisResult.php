@@ -6,7 +6,7 @@ namespace Codemetry\Core\Domain;
 
 final readonly class AnalysisResult implements \JsonSerializable
 {
-    public const string SCHEMA_VERSION = '1.0';
+    public const SCHEMA_VERSION = '1.0';
 
     /**
      * @param array<string, mixed> $requestSummary

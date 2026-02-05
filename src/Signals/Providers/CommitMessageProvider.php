@@ -13,9 +13,9 @@ use Codemetry\Core\Signals\SignalProvider;
 
 final class CommitMessageProvider implements SignalProvider
 {
-    private const string FIX_PATTERN = '/\b(fix|bug|hotfix|patch|typo|oops)\b/i';
-    private const string REVERT_PATTERN = '/\b(revert)\b/i';
-    private const string WIP_PATTERN = '/\b(wip|tmp|debug|hack)\b/i';
+    private const FIX_PATTERN = '/\b(fix|bug|hotfix|patch|typo|oops)\b/i';
+    private const REVERT_PATTERN = '/\b(revert)\b/i';
+    private const WIP_PATTERN = '/\b(wip|tmp|debug|hack)\b/i';
 
     public function id(): string
     {

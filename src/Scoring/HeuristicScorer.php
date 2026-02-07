@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Codemetry\Core\Scoring;
 
+use Codemetry\Core\Domain\Confounder;
 use Codemetry\Core\Domain\Direction;
 use Codemetry\Core\Domain\MoodLabel;
 use Codemetry\Core\Domain\MoodResult;
@@ -134,7 +135,7 @@ final class HeuristicScorer
 
         $keyProviders = ['change_shape', 'follow_up_fix', 'commit_message'];
         foreach ($keyProviders as $providerId) {
-            if (in_array('provider_skipped:' . $providerId, $confounders, true)) {
+            if (in_array(Confounder::providerSkipped($providerId), $confounders, true)) {
                 $confidence -= 0.1;
             }
         }
@@ -156,7 +157,7 @@ final class HeuristicScorer
         // Large refactor suspected: high churn but low follow-up fix density
         if ($churnPctl !== null && $churnPctl >= 95
             && $fixDensityPctl !== null && $fixDensityPctl <= 50) {
-            $confounders[] = 'large_refactor_suspected';
+            $confounders[] = Confounder::LARGE_REFACTOR_SUSPECTED;
         }
 
         // Formatting/rename suspected: very high churn + many files + low follow-up
@@ -164,7 +165,7 @@ final class HeuristicScorer
         if ($churnPctl !== null && $churnPctl >= 95
             && $filesTouchedPctl !== null && $filesTouchedPctl >= 90
             && ($fixDensityPctl === null || $fixDensityPctl <= 25)) {
-            $confounders[] = 'formatting_or_rename_suspected';
+            $confounders[] = Confounder::FORMATTING_OR_RENAME_SUSPECTED;
         }
 
         return array_values(array_unique($confounders));

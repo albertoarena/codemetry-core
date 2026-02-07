@@ -14,6 +14,7 @@ use Codemetry\Core\Baseline\Normalizer;
 use Codemetry\Core\Domain\AnalysisRequest;
 use Codemetry\Core\Domain\AnalysisResult;
 use Codemetry\Core\Domain\AnalysisWindow;
+use Codemetry\Core\Domain\Confounder;
 use Codemetry\Core\Domain\MoodResult;
 use Codemetry\Core\Domain\RepoSnapshot;
 use Codemetry\Core\Git\GitRepoReader;
@@ -72,8 +73,8 @@ final class Analyzer
             $confounders = $collected['confounders'];
 
             // Add ai_unavailable confounder if AI was requested but not available
-            if ($aiUnavailable && !in_array('ai_unavailable', $confounders, true)) {
-                $confounders[] = 'ai_unavailable';
+            if ($aiUnavailable && !in_array(Confounder::AI_UNAVAILABLE, $confounders, true)) {
+                $confounders[] = Confounder::AI_UNAVAILABLE;
             }
 
             $mood = $this->scorer->score($features, $confounders);
@@ -171,7 +172,9 @@ final class Analyzer
             return $cached;
         }
 
-        $earliest = $windows[0]->start ?? new \DateTimeImmutable();
+        $earliest = count($windows) > 0
+            ? $windows[0]->start
+            : new \DateTimeImmutable();
         $builder = new BaselineBuilder($this->gitReader, $this->registry);
         $baseline = $builder->build($repoPath, $earliest, $request->baselineDays, $config);
 
@@ -232,8 +235,8 @@ final class Analyzer
 
             // Add ai_unavailable confounder
             $confounders = $mood->confounders;
-            if (!in_array('ai_unavailable', $confounders, true)) {
-                $confounders[] = 'ai_unavailable';
+            if (!in_array(Confounder::AI_UNAVAILABLE, $confounders, true)) {
+                $confounders[] = Confounder::AI_UNAVAILABLE;
             }
 
             return new MoodResult(

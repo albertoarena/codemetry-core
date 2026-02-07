@@ -25,7 +25,10 @@ final class FollowUpFixProvider implements SignalProvider
     public function provide(RepoSnapshot $snapshot, ProviderContext $ctx): SignalSet
     {
         $horizonDays = $ctx->config['follow_up_horizon_days'] ?? self::DEFAULT_HORIZON_DAYS;
-        $fixPattern = $ctx->config['keywords']['fix_pattern'] ?? self::FIX_PATTERN;
+        $fixPattern = $this->validatePattern(
+            $ctx->config['keywords']['fix_pattern'] ?? self::FIX_PATTERN,
+            self::FIX_PATTERN
+        );
 
         if ($ctx->gitReader === null || $snapshot->filesTouchedCount === 0) {
             return $this->emptySignals($snapshot->window->label, $horizonDays);
@@ -88,6 +91,18 @@ final class FollowUpFixProvider implements SignalProvider
                 'Fix commits / max(1, churn)',
             ),
         ]);
+    }
+
+    /**
+     * Validate a regex pattern and fall back to default if invalid.
+     */
+    private function validatePattern(string $pattern, string $default): string
+    {
+        if (@preg_match($pattern, '') === false) {
+            return $default;
+        }
+
+        return $pattern;
     }
 
     private function emptySignals(string $windowLabel, int $horizonDays): SignalSet

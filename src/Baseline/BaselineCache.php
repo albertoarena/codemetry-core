@@ -57,7 +57,9 @@ final class BaselineCache
 
         $dir = dirname($path);
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                return; // Cache is optional, fail gracefully
+            }
         }
 
         $data = [
@@ -66,7 +68,7 @@ final class BaselineCache
             'baseline' => $baseline->toArray(),
         ];
 
-        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        @file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     }
 
     /**

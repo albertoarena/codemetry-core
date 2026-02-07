@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Codemetry\Core\Signals;
 
+use Codemetry\Core\Domain\Confounder;
 use Codemetry\Core\Domain\RepoSnapshot;
 use Codemetry\Core\Domain\SignalSet;
 
@@ -29,8 +30,8 @@ final class ProviderRegistry
             try {
                 $signals = $provider->provide($snapshot, $ctx);
                 $merged = $merged->merge($signals);
-            } catch (\Throwable) {
-                $confounders[] = 'provider_skipped:' . $provider->id();
+            } catch (\Exception) {
+                $confounders[] = Confounder::providerSkipped($provider->id());
             }
         }
 

@@ -28,9 +28,18 @@ final class CommitMessageProvider implements SignalProvider
         $revertCount = 0;
         $wipCount = 0;
 
-        $fixPattern = $ctx->config['keywords']['fix_pattern'] ?? self::FIX_PATTERN;
-        $revertPattern = $ctx->config['keywords']['revert_pattern'] ?? self::REVERT_PATTERN;
-        $wipPattern = $ctx->config['keywords']['wip_pattern'] ?? self::WIP_PATTERN;
+        $fixPattern = $this->validatePattern(
+            $ctx->config['keywords']['fix_pattern'] ?? self::FIX_PATTERN,
+            self::FIX_PATTERN
+        );
+        $revertPattern = $this->validatePattern(
+            $ctx->config['keywords']['revert_pattern'] ?? self::REVERT_PATTERN,
+            self::REVERT_PATTERN
+        );
+        $wipPattern = $this->validatePattern(
+            $ctx->config['keywords']['wip_pattern'] ?? self::WIP_PATTERN,
+            self::WIP_PATTERN
+        );
 
         foreach ($snapshot->commits as $commit) {
             $subject = $commit->subject;
@@ -77,5 +86,17 @@ final class CommitMessageProvider implements SignalProvider
                 'Ratio of fix commits to total commits',
             ),
         ]);
+    }
+
+    /**
+     * Validate a regex pattern and fall back to default if invalid.
+     */
+    private function validatePattern(string $pattern, string $default): string
+    {
+        if (@preg_match($pattern, '') === false) {
+            return $default;
+        }
+
+        return $pattern;
     }
 }

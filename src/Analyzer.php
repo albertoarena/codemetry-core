@@ -219,6 +219,16 @@ final class Analyzer
         }
     }
 
+    private ?string $lastAiError = null;
+
+    /**
+     * Get the last AI error message, if any.
+     */
+    public function getLastAiError(): ?string
+    {
+        return $this->lastAiError;
+    }
+
     private function applyAiEnhancement(
         AiEngine $engine,
         MoodResult $mood,
@@ -230,8 +240,9 @@ final class Analyzer
             $summary = $engine->summarize($input);
 
             return $mood->withAiSummary($summary);
-        } catch (AiEngineException) {
+        } catch (AiEngineException $e) {
             $aiUnavailable = true;
+            $this->lastAiError = $e->getMessage();
 
             // Add ai_unavailable confounder
             $confounders = $mood->confounders;

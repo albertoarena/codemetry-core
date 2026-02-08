@@ -24,6 +24,14 @@ final readonly class SignalSet implements \JsonSerializable
         return isset($this->signals[$key]);
     }
 
+    /**
+     * @return array<string, Signal>
+     */
+    public function all(): array
+    {
+        return $this->signals;
+    }
+
     public function merge(self $other): self
     {
         return new self(

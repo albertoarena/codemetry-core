@@ -93,6 +93,33 @@ PROMPT;
     abstract protected function extractContent(array $response): string;
 
     /**
+     * Extract a human-readable error message from an API error response.
+     */
+    protected function extractErrorMessage(string $response, int $httpCode): string
+    {
+        $decoded = json_decode($response, true);
+
+        if (is_array($decoded)) {
+            // OpenAI/DeepSeek format: {"error": {"message": "..."}}
+            if (isset($decoded['error']['message'])) {
+                return "HTTP {$httpCode}: " . $decoded['error']['message'];
+            }
+            // Anthropic format: {"error": {"message": "..."}} or {"message": "..."}
+            if (isset($decoded['message'])) {
+                return "HTTP {$httpCode}: " . $decoded['message'];
+            }
+            // Google format: {"error": {"message": "..."}}
+            if (isset($decoded['error']) && is_string($decoded['error'])) {
+                return "HTTP {$httpCode}: " . $decoded['error'];
+            }
+        }
+
+        // Fallback to raw response (truncated)
+        $truncated = strlen($response) > 200 ? substr($response, 0, 200) . '...' : $response;
+        return "HTTP {$httpCode}: {$truncated}";
+    }
+
+    /**
      * Make an HTTP POST request.
      *
      * @param array<string, mixed> $payload
@@ -137,7 +164,8 @@ PROMPT;
         }
 
         if ($httpCode >= 400) {
-            throw AiEngineException::requestFailed($this->id(), "HTTP {$httpCode}: {$response}");
+            $errorMessage = $this->extractErrorMessage((string) $response, $httpCode);
+            throw AiEngineException::requestFailed($this->id(), $errorMessage);
         }
 
         $decoded = json_decode((string) $response, true);

@@ -55,6 +55,36 @@ final class GoogleEngine extends AbstractAiEngine
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    protected function callApiBatch(string $userPrompt): array
+    {
+        $baseUrl = $this->baseUrl ?? $this->defaultBaseUrl();
+        $url = "{$baseUrl}/models/{$this->model}:generateContent?key={$this->apiKey}";
+
+        $payload = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => self::BATCH_SYSTEM_PROMPT . "\n\n" . $userPrompt],
+                    ],
+                ],
+            ],
+            'generationConfig' => [
+                'temperature' => 0.3,
+                'maxOutputTokens' => 4000,
+                'responseMimeType' => 'application/json',
+            ],
+        ];
+
+        $headers = [
+            'Content-Type' => 'application/json',
+        ];
+
+        return $this->httpPost($url, $payload, $headers);
+    }
+
+    /**
      * @param array<string, mixed> $response
      */
     protected function extractContent(array $response): string

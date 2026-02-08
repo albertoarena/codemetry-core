@@ -64,6 +64,50 @@ test('google engine has correct id', function () {
     expect($engine->id())->toBe('google');
 });
 
+// --- Batch Method Tests ---
+
+test('openai engine summarizeBatch throws when api key missing', function () {
+    $engine = new OpenAiEngine([]);
+    $input = createTestInput();
+
+    $engine->summarizeBatch([$input]);
+})->throws(AiEngineException::class, 'API key not configured for AI engine: openai');
+
+test('anthropic engine summarizeBatch throws when api key missing', function () {
+    $engine = new AnthropicEngine([]);
+    $input = createTestInput();
+
+    $engine->summarizeBatch([$input]);
+})->throws(AiEngineException::class, 'API key not configured for AI engine: anthropic');
+
+test('deepseek engine summarizeBatch throws when api key missing', function () {
+    $engine = new DeepSeekEngine([]);
+    $input = createTestInput();
+
+    $engine->summarizeBatch([$input]);
+})->throws(AiEngineException::class, 'API key not configured for AI engine: deepseek');
+
+test('google engine summarizeBatch throws when api key missing', function () {
+    $engine = new GoogleEngine([]);
+    $input = createTestInput();
+
+    $engine->summarizeBatch([$input]);
+})->throws(AiEngineException::class, 'API key not configured for AI engine: google');
+
+test('all engines return empty array for empty batch', function () {
+    $engines = [
+        new OpenAiEngine(['api_key' => 'test']),
+        new AnthropicEngine(['api_key' => 'test']),
+        new DeepSeekEngine(['api_key' => 'test']),
+        new GoogleEngine(['api_key' => 'test']),
+    ];
+
+    foreach ($engines as $engine) {
+        $result = $engine->summarizeBatch([]);
+        expect($result)->toBe([]);
+    }
+});
+
 // --- Helper ---
 
 function createTestInput(): MoodAiInput

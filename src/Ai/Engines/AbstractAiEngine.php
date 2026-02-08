@@ -30,6 +30,29 @@ Respond in JSON format with this structure:
 }
 PROMPT;
 
+    protected const BATCH_SYSTEM_PROMPT = <<<'PROMPT'
+You are a software metrics assistant. You do not infer emotions. You explain risk, quality, and strain signals from Git repository analysis.
+
+You will receive metrics for MULTIPLE days. For EACH day (identified by window_label), provide:
+1. Up to 5 bullet points explaining what the mood proxy result means
+2. Any confounders or caveats to consider
+3. Optionally, a score_delta (between -10 and +10) if the heuristic missed something important
+
+Respond in JSON format with an object where keys are the window_label values:
+{
+  "2024-01-15": {
+    "explanation_bullets": ["bullet 1", "bullet 2", ...],
+    "score_delta": 0,
+    "confidence_delta": 0.0
+  },
+  "2024-01-16": {
+    "explanation_bullets": ["bullet 1", "bullet 2", ...],
+    "score_delta": 0,
+    "confidence_delta": 0.0
+  }
+}
+PROMPT;
+
     protected string $apiKey;
     protected string $model;
     protected ?string $baseUrl;
@@ -62,15 +85,59 @@ PROMPT;
         return $this->parseResponse($response);
     }
 
+    /**
+     * @param array<MoodAiInput> $inputs
+     * @return array<string, MoodAiSummary> Keyed by window_label
+     */
+    public function summarizeBatch(array $inputs): array
+    {
+        if ($this->apiKey === '') {
+            throw AiEngineException::missingApiKey($this->id());
+        }
+
+        if (empty($inputs)) {
+            return [];
+        }
+
+        // For a single input, use the regular method
+        if (count($inputs) === 1) {
+            $input = reset($inputs);
+            return [$input->windowLabel => $this->summarize($input)];
+        }
+
+        $userPrompt = $this->buildBatchUserPrompt($inputs);
+        $response = $this->callApiBatch($userPrompt);
+
+        return $this->parseBatchResponse($response, $inputs);
+    }
+
     protected function buildUserPrompt(MoodAiInput $input): string
     {
         return "Analyze these software metrics:\n\n" . json_encode($input, JSON_PRETTY_PRINT);
     }
 
     /**
+     * @param array<MoodAiInput> $inputs
+     */
+    protected function buildBatchUserPrompt(array $inputs): string
+    {
+        $data = [];
+        foreach ($inputs as $input) {
+            $data[$input->windowLabel] = $input;
+        }
+
+        return "Analyze these software metrics for multiple days:\n\n" . json_encode($data, JSON_PRETTY_PRINT);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     abstract protected function callApi(string $userPrompt): array;
+
+    /**
+     * @return array<string, mixed>
+     */
+    abstract protected function callApiBatch(string $userPrompt): array;
 
     /**
      * @param array<string, mixed> $response
@@ -85,6 +152,36 @@ PROMPT;
         }
 
         return MoodAiSummary::fromArray($json);
+    }
+
+    /**
+     * Parse batch response from AI API.
+     *
+     * @param array<string, mixed> $response
+     * @param array<MoodAiInput> $inputs
+     * @return array<string, MoodAiSummary>
+     */
+    protected function parseBatchResponse(array $response, array $inputs): array
+    {
+        $content = $this->extractContent($response);
+
+        $json = json_decode($content, true);
+        if (!is_array($json)) {
+            throw AiEngineException::invalidResponse($this->id(), 'Batch response is not valid JSON');
+        }
+
+        $results = [];
+        foreach ($inputs as $input) {
+            $label = $input->windowLabel;
+            if (isset($json[$label]) && is_array($json[$label])) {
+                $results[$label] = MoodAiSummary::fromArray($json[$label]);
+            } else {
+                // Fallback: empty summary for missing entries
+                $results[$label] = new MoodAiSummary();
+            }
+        }
+
+        return $results;
     }
 
     /**

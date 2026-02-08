@@ -23,4 +23,13 @@ interface AiEngine
      * @throws AiEngineException If the engine fails (missing API key, network error, etc.)
      */
     public function summarize(MoodAiInput $input): MoodAiSummary;
+
+    /**
+     * Generate AI summaries for multiple mood results in a single API call.
+     *
+     * @param array<MoodAiInput> $inputs
+     * @return array<string, MoodAiSummary> Keyed by window_label
+     * @throws AiEngineException If the engine fails
+     */
+    public function summarizeBatch(array $inputs): array;
 }

@@ -63,8 +63,9 @@ final class Analyzer
         $ctx = new ProviderContext($repoPath, $config, $this->gitReader);
         $aiEngine = $this->resolveAiEngine($request, $config);
         $moodResults = [];
-        $aiUnavailable = false;
+        $snapshots = [];
 
+        // First pass: build all mood results without AI enhancement
         foreach ($windows as $window) {
             $snapshot = $this->gitReader->buildSnapshot($repoPath, $window, $request->author, $request->branch);
             $collected = $this->registry->collect($snapshot, $ctx);
@@ -72,19 +73,15 @@ final class Analyzer
             $features = $this->normalizer->normalize($collected['signals'], $baseline);
             $confounders = $collected['confounders'];
 
-            // Add ai_unavailable confounder if AI was requested but not available
-            if ($aiUnavailable && !in_array(Confounder::AI_UNAVAILABLE, $confounders, true)) {
-                $confounders[] = Confounder::AI_UNAVAILABLE;
-            }
-
             $mood = $this->scorer->score($features, $confounders);
-
-            // Apply AI enhancement if available
-            if ($aiEngine !== null && !$aiUnavailable) {
-                $mood = $this->applyAiEnhancement($aiEngine, $mood, $snapshot, $aiUnavailable);
-            }
-
             $moodResults[] = $mood;
+            $snapshots[] = $snapshot;
+        }
+
+        // Second pass: apply AI enhancement in batches if enabled
+        if ($aiEngine !== null) {
+            $batchSize = (int) ($config['ai']['batch_size'] ?? 10);
+            $moodResults = $this->applyAiBatchEnhancement($aiEngine, $moodResults, $snapshots, $batchSize);
         }
 
         return new AnalysisResult(
@@ -229,38 +226,78 @@ final class Analyzer
         return $this->lastAiError;
     }
 
-    private function applyAiEnhancement(
+    /**
+     * Apply AI enhancement to mood results in batches.
+     *
+     * @param array<MoodResult> $moodResults
+     * @param array<RepoSnapshot> $snapshots
+     * @return array<MoodResult>
+     */
+    private function applyAiBatchEnhancement(
         AiEngine $engine,
-        MoodResult $mood,
-        RepoSnapshot $snapshot,
-        bool &$aiUnavailable,
-    ): MoodResult {
-        try {
-            $input = $this->buildAiInput($mood, $snapshot);
-            $summary = $engine->summarize($input);
-
-            return $mood->withAiSummary($summary);
-        } catch (AiEngineException $e) {
-            $aiUnavailable = true;
-            $this->lastAiError = $e->getMessage();
-
-            // Add ai_unavailable confounder
-            $confounders = $mood->confounders;
-            if (!in_array(Confounder::AI_UNAVAILABLE, $confounders, true)) {
-                $confounders[] = Confounder::AI_UNAVAILABLE;
-            }
-
-            return new MoodResult(
-                windowLabel: $mood->windowLabel,
-                moodLabel: $mood->moodLabel,
-                moodScore: $mood->moodScore,
-                confidence: $mood->confidence,
-                reasons: $mood->reasons,
-                confounders: $confounders,
-                rawSignals: $mood->rawSignals,
-                normalized: $mood->normalized,
-            );
+        array $moodResults,
+        array $snapshots,
+        int $batchSize,
+    ): array {
+        // Build all AI inputs
+        $inputs = [];
+        foreach ($moodResults as $index => $mood) {
+            $inputs[$index] = $this->buildAiInput($mood, $snapshots[$index]);
         }
+
+        // Process in batches
+        $batches = array_chunk($inputs, $batchSize, true);
+        $allSummaries = [];
+
+        foreach ($batches as $batch) {
+            try {
+                $summaries = $engine->summarizeBatch(array_values($batch));
+                $allSummaries = array_merge($allSummaries, $summaries);
+            } catch (AiEngineException $e) {
+                $this->lastAiError = $e->getMessage();
+
+                // Mark all remaining moods with ai_unavailable confounder
+                foreach ($moodResults as $index => $mood) {
+                    if (!isset($allSummaries[$mood->windowLabel])) {
+                        $moodResults[$index] = $this->addAiUnavailableConfounder($mood);
+                    }
+                }
+
+                break;
+            }
+        }
+
+        // Apply summaries to mood results
+        foreach ($moodResults as $index => $mood) {
+            $label = $mood->windowLabel;
+            if (isset($allSummaries[$label])) {
+                $moodResults[$index] = $mood->withAiSummary($allSummaries[$label]);
+            }
+        }
+
+        return $moodResults;
+    }
+
+    /**
+     * Add ai_unavailable confounder to a mood result.
+     */
+    private function addAiUnavailableConfounder(MoodResult $mood): MoodResult
+    {
+        $confounders = $mood->confounders;
+        if (!in_array(Confounder::AI_UNAVAILABLE, $confounders, true)) {
+            $confounders[] = Confounder::AI_UNAVAILABLE;
+        }
+
+        return new MoodResult(
+            windowLabel: $mood->windowLabel,
+            moodLabel: $mood->moodLabel,
+            moodScore: $mood->moodScore,
+            confidence: $mood->confidence,
+            reasons: $mood->reasons,
+            confounders: $confounders,
+            rawSignals: $mood->rawSignals,
+            normalized: $mood->normalized,
+        );
     }
 
     private function buildAiInput(MoodResult $mood, RepoSnapshot $snapshot): MoodAiInput

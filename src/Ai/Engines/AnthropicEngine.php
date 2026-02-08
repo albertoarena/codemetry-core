@@ -50,6 +50,31 @@ final class AnthropicEngine extends AbstractAiEngine
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    protected function callApiBatch(string $userPrompt): array
+    {
+        $url = ($this->baseUrl ?? $this->defaultBaseUrl()) . '/messages';
+
+        $payload = [
+            'model' => $this->model,
+            'max_tokens' => 4000,
+            'system' => self::BATCH_SYSTEM_PROMPT,
+            'messages' => [
+                ['role' => 'user', 'content' => $userPrompt],
+            ],
+        ];
+
+        $headers = [
+            'Content-Type' => 'application/json',
+            'x-api-key' => $this->apiKey,
+            'anthropic-version' => '2023-06-01',
+        ];
+
+        return $this->httpPost($url, $payload, $headers);
+    }
+
+    /**
      * @param array<string, mixed> $response
      */
     protected function extractContent(array $response): string

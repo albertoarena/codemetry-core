@@ -53,6 +53,32 @@ final class DeepSeekEngine extends AbstractAiEngine
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    protected function callApiBatch(string $userPrompt): array
+    {
+        $url = ($this->baseUrl ?? $this->defaultBaseUrl()) . '/chat/completions';
+
+        $payload = [
+            'model' => $this->model,
+            'messages' => [
+                ['role' => 'system', 'content' => self::BATCH_SYSTEM_PROMPT],
+                ['role' => 'user', 'content' => $userPrompt],
+            ],
+            'temperature' => 0.3,
+            'max_tokens' => 4000,
+            'response_format' => ['type' => 'json_object'],
+        ];
+
+        $headers = [
+            'Content-Type' => 'application/json',
+            'Authorization' => "Bearer {$this->apiKey}",
+        ];
+
+        return $this->httpPost($url, $payload, $headers);
+    }
+
+    /**
      * @param array<string, mixed> $response
      */
     protected function extractContent(array $response): string

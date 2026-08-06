@@ -75,6 +75,12 @@ class MyProvider implements SignalProvider
 - All analysis runs locally via Git commands against your repository.
 - No data is sent to external services unless AI engines are explicitly enabled.
 
+## 📬 Stay updated
+
+Occasional emails on developer tooling and AI-assisted development: new releases, packages, and write-ups. No spam, unsubscribe anytime.
+
+**[Subscribe to the newsletter →](https://albertoarena.it/subscribe/?utm_source=codemetry&utm_medium=readme&utm_campaign=newsletter&utm_content=codemetry-core)**
+
 ## License
 
 MIT

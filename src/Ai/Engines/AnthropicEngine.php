@@ -16,7 +16,7 @@ final class AnthropicEngine extends AbstractAiEngine
 
     protected function defaultModel(): string
     {
-        return 'claude-sonnet-4-20250514';
+        return 'claude-sonnet-5-5';
     }
 
     protected function defaultBaseUrl(): string

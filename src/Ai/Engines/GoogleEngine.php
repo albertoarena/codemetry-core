@@ -16,7 +16,7 @@ final class GoogleEngine extends AbstractAiEngine
 
     protected function defaultModel(): string
     {
-        return 'gemini-1.5-flash';
+        return 'gemini-3.8-flash';
     }
 
     protected function defaultBaseUrl(): string

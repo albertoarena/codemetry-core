@@ -108,7 +108,31 @@ test('all engines return empty array for empty batch', function () {
     }
 });
 
+// --- Default models ---
+
+test('engines default to current models', function (string $class, string $model) {
+    $engine = new $class(['api_key' => 'test']);
+
+    expect(engineModel($engine))->toBe($model);
+})->with([
+    'openai' => [OpenAiEngine::class, 'gpt-6-luna'],
+    'anthropic' => [AnthropicEngine::class, 'claude-sonnet-5-5'],
+    'deepseek' => [DeepSeekEngine::class, 'deepseek-flash'],
+    'google' => [GoogleEngine::class, 'gemini-3.8-flash'],
+]);
+
+test('configured model overrides engine default', function () {
+    $engine = new OpenAiEngine(['api_key' => 'test', 'model' => 'gpt-6-sol']);
+
+    expect(engineModel($engine))->toBe('gpt-6-sol');
+});
+
 // --- Helper ---
+
+function engineModel(object $engine): string
+{
+    return (new ReflectionProperty($engine, 'model'))->getValue($engine);
+}
 
 function createTestInput(): MoodAiInput
 {

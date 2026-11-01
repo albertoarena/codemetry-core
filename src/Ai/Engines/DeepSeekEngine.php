@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Codemetry\Core\Ai\Engines;
 
 /**
- * DeepSeek API engine (DeepSeek Coder, DeepSeek Chat)
+ * DeepSeek API engine (DeepSeek models)
  *
  * DeepSeek uses an OpenAI-compatible API format.
  */
@@ -18,7 +18,7 @@ final class DeepSeekEngine extends AbstractAiEngine
 
     protected function defaultModel(): string
     {
-        return 'deepseek-chat';
+        return 'deepseek-flash';
     }
 
     protected function defaultBaseUrl(): string

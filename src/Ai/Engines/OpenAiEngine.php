@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Codemetry\Core\Ai\Engines;
 
 /**
- * OpenAI API engine (GPT-4, GPT-3.5, etc.)
+ * OpenAI API engine (GPT models)
  */
 final class OpenAiEngine extends AbstractAiEngine
 {
@@ -16,7 +16,7 @@ final class OpenAiEngine extends AbstractAiEngine
 
     protected function defaultModel(): string
     {
-        return 'gpt-4o-mini';
+        return 'gpt-6-luna';
     }
 
     protected function defaultBaseUrl(): string
@@ -37,8 +37,7 @@ final class OpenAiEngine extends AbstractAiEngine
                 ['role' => 'system', 'content' => self::SYSTEM_PROMPT],
                 ['role' => 'user', 'content' => $userPrompt],
             ],
-            'temperature' => 0.3,
-            'max_tokens' => 1000,
+            'max_completion_tokens' => 1000,
             'response_format' => ['type' => 'json_object'],
         ];
 
@@ -63,8 +62,7 @@ final class OpenAiEngine extends AbstractAiEngine
                 ['role' => 'system', 'content' => self::BATCH_SYSTEM_PROMPT],
                 ['role' => 'user', 'content' => $userPrompt],
             ],
-            'temperature' => 0.3,
-            'max_tokens' => 4000,
+            'max_completion_tokens' => 4000,
             'response_format' => ['type' => 'json_object'],
         ];
 

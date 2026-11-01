@@ -254,8 +254,6 @@ PROMPT;
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
 
-        curl_close($ch);
-
         if ($response === false) {
             throw AiEngineException::requestFailed($this->id(), $error ?: 'Unknown cURL error');
         }

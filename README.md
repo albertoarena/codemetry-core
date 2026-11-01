@@ -8,7 +8,7 @@ This package provides the core analysis engine. For Laravel integration, see [co
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.3+
 - Git
 
 ## Installation
